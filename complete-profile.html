@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edit profile — Hobbiyaa</title>
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Caveat:wght@600;700&family=DM+Sans:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
+<link rel="stylesheet" href="style.css">
+<style>
+  .auth-wrap{ max-width: 480px; margin: 0 auto; padding: 64px 24px 100px; }
+  .auth-wrap h1{ font-size: 1.9rem; margin-bottom: 8px; }
+  .auth-wrap .sub{ color: var(--ink-soft); margin-bottom: 32px; }
+  .hobby-picker{ display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+  .hobby-picker label{
+    font-family: var(--font-body); font-size: 0.9rem; font-weight: 500;
+    background: var(--paper); border: 2px solid var(--ink); border-radius: 999px;
+    padding: 8px 14px; cursor: pointer; display: flex; align-items: center; gap: 6px;
+  }
+  .hobby-picker label:has(input:checked){ background: var(--green); color: var(--paper); border-color: var(--green); }
+  .field-row{ display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 480px){ .field-row{ grid-template-columns: 1fr; } }
+  .field select{
+    font-family: var(--font-body); font-size: 1rem;
+    padding: 12px 14px; border: 2px solid var(--ink); border-radius: var(--radius);
+    background: var(--paper); color: var(--ink); width: 100%;
+  }
+
+  /* ===== Avatar picker row ===== */
+  .avatar-picker-row{ display: flex; align-items: center; gap: 16px; }
+  .avatar-picker-row img{
+    width: 72px; height: 72px; border-radius: 50%; object-fit: cover;
+    border: 2px solid var(--ink); background: var(--paper); display: none;
+  }
+  .avatar-picker-row label.file-btn{
+    font-family: var(--font-body); font-weight: 700; font-size: 0.88rem;
+    padding: 9px 16px; border-radius: var(--radius); border: 2px solid var(--ink);
+    cursor: pointer; background: none;
+  }
+  .avatar-picker-row label.file-btn:hover{ background: var(--ink); color: var(--paper); }
+  .avatar-picker-row input[type="file"]{ display: none; }
+
+  /* ===== Crop modal ===== */
+  #avatarModal, #cameraModal{
+    display: none; position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.85);
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  .crop-box{
+    background: var(--paper); border: 2px solid var(--ink); border-radius: 10px;
+    padding: 20px; max-width: 420px; width: 100%;
+  }
+  .crop-box h3{ font-family: var(--font-display); margin-bottom: 12px; font-size: 1.1rem; }
+  .cropper-container-wrap{ width: 100%; height: 300px; background: #000; margin-bottom: 16px; }
+  .cropper-container-wrap img{ max-width: 100%; display: block; }
+  .filter-row{ display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+  .filter-btn{
+    font-family: var(--font-body); font-size: 0.82rem; font-weight: 500;
+    padding: 7px 12px; border-radius: 999px; border: 2px solid var(--ink);
+    background: none; cursor: pointer;
+  }
+  .filter-btn.active{ background: var(--ink); color: var(--paper); }
+  .crop-actions{ display: flex; gap: 10px; justify-content: flex-end; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="feed.html" class="logo">
+      <img src="assets/logo-mark.png" alt="" class="logo-mark" onerror="this.style.display='none'">
+      Hobbiyaa
+    </a>
+  </div>
+</header>
+
+<main class="auth-wrap">
+  <h1>Edit profile</h1>
+  <p class="sub">Update your photo, locality, and hobbies.</p>
+
+  <form id="profileForm" class="join-form" novalidate>
+    <div class="field">
+      <label for="fullName">Full name</label>
+      <input type="text" id="fullName" required placeholder="Your name">
+    </div>
+    <div class="field">
+      <label for="city">City / locality</label>
+      <input type="text" id="city" required placeholder="e.g. Kolar Road, Bhopal">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="gender">Gender</label>
+        <select id="gender" required>
+          <option value="" disabled selected>Select</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+          <option value="Prefer not to say">Prefer not to say</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="dob">Date of birth</label>
+        <input type="date" id="dob" required>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Profile picture</label>
+      <div class="avatar-picker-row">
+        <img id="avatarPreview" alt="Preview">
+        <label class="file-btn" for="avatar">Choose photo</label>
+        <button type="button" id="cameraBtn" class="file-btn">📷 Take photo</button>
+        <input type="file" id="avatar" accept="image/*">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Location</label>
+      <button type="button" id="locationBtn" class="btn btn-ghost" style="justify-self:start;">📍 Share my location</button>
+      <p class="form-note" id="locationNote"></p>
+    </div>
+    <div class="field">
+      <label>Your hobbies</label>
+      <div class="hobby-picker" id="hobbyPicker"></div>
+    </div>
+    <button type="submit" class="btn btn-primary">Save profile</button>
+    <p class="form-note" id="formNote" role="status" aria-live="polite"></p>
+  </form>
+</main>
+
+<!-- Crop/filter modal -->
+<div id="avatarModal">
+  <div class="crop-box">
+    <h3>Adjust your photo</h3>
+    <div class="cropper-container-wrap">
+      <img id="cropperImage" alt="Crop preview">
+    </div>
+    <div class="filter-row">
+      <button type="button" class="filter-btn active" data-filter="none">None</button>
+      <button type="button" class="filter-btn" data-filter="grayscale(100%)">B&amp;W</button>
+      <button type="button" class="filter-btn" data-filter="contrast(120%) saturate(130%)">Vivid</button>
+      <button type="button" class="filter-btn" data-filter="sepia(55%)">Warm</button>
+      <button type="button" class="filter-btn" data-filter="brightness(1.15) contrast(105%)">Bright</button>
+    </div>
+    <div class="crop-actions">
+      <button type="button" id="cancelCropBtn" class="btn btn-ghost">Cancel</button>
+      <button type="button" id="saveCropBtn" class="btn btn-primary">Save photo</button>
+    </div>
+  </div>
+</div>
+
+<!-- Camera capture modal -->
+<div id="cameraModal">
+  <div class="crop-box">
+    <h3>Take a photo</h3>
+    <div class="cropper-container-wrap">
+      <video id="cameraVideo" autoplay playsinline muted style="width:100%; height:100%; object-fit:cover; transform: scaleX(-1);"></video>
+    </div>
+    <div class="crop-actions">
+      <button type="button" id="cancelCameraBtn" class="btn btn-ghost">Cancel</button>
+      <button type="button" id="captureCameraBtn" class="btn btn-primary">📸 Capture</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+<script src="config.js"></script>
+<script src="toast.js"></script>
+<script src="notifications.js"></script>
+<script src="avatar-editor.js"></script>
+<script src="complete-profile.js"></script>
+</body>
+</html>

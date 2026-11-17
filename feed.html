@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feed — Hobbiyaa</title>
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=DM+Sans:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="style.css">
+<style>
+  .feed-layout{
+    max-width: 1200px; margin: 0 auto; padding: 24px 20px 100px;
+    display: grid; grid-template-columns: 240px 1fr 240px; gap: 20px; align-items: start;
+  }
+  @media (max-width: 980px){
+    .feed-layout{ grid-template-columns: 1fr; }
+    .feed-sidebar-left, .feed-sidebar-right{ order: 2; }
+  }
+
+  .widget{
+    background: var(--paper); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
+    padding: 16px; margin-bottom: 16px;
+  }
+  .widget h3{ font-family: var(--font-display); font-size: 0.95rem; margin-bottom: 12px; }
+
+  .discovery-panel{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px;margin:18px 0;background:#f2ead9;border:1px solid #e2d5bc;border-radius:18px;color:#292a24}
+  .discovery-panel-copy{min-width:0}.discovery-eyebrow{font-size:.66rem;letter-spacing:.12em;font-weight:800;color:#7a6c4d}.discovery-panel h2{font-size:1.2rem;line-height:1.2;margin:5px 0;font-family:var(--font-display)}.discovery-panel p{font-size:.82rem;color:#686354;line-height:1.4}
+  .discovery-action{flex-shrink:0;background:#273d32;color:#fff;padding:10px 13px;border-radius:999px;font-size:.8rem;font-weight:700;text-decoration:none;transition:transform .2s,background .2s}.discovery-action:hover{transform:translateY(-2px);background:#3c5949}
+  .feed-controls{display:grid;grid-template-columns:minmax(0,1fr) 145px;gap:9px;margin:12px 0}.feed-controls .feed-search{margin:0;min-width:0}.feed-time-filter{width:100%;padding:10px;border:1px solid #d7d0c4;border-radius:10px;background:#fffdf8;color:#292a24;font:inherit;font-size:.83rem}
+  @media(max-width:560px){.discovery-panel{align-items:flex-start;flex-direction:column}.discovery-action{align-self:flex-start}.feed-controls{grid-template-columns:1fr}.feed-time-filter{min-height:42px}}
+
+  /* ===== Featured Events ===== */
+  .event-card{ display: flex; gap: 10px; margin-bottom: 14px; }
+  .event-date{
+    width: 42px; height: 42px; border-radius: 8px; background: var(--cream);
+    border: 1px solid rgba(255,255,255,0.12); flex-shrink: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .event-date .month{ font-size: 0.6rem; text-transform: uppercase; color: var(--ink-soft); }
+  .event-date .day{ font-size: 1rem; font-weight: 700; line-height: 1; }
+  .event-info{ flex: 1; min-width: 0; }
+  .event-info .title{ font-size: 0.86rem; font-weight: 700; margin-bottom: 2px; }
+  .event-info .sub{ font-size: 0.74rem; color: var(--ink-soft); margin-bottom: 6px; }
+  .event-info .row{ display: flex; align-items: center; gap: 6px; }
+  .event-info img{ width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
+  .signup-btn{
+    font-family: var(--font-body); font-size: 0.72rem; font-weight: 700;
+    padding: 4px 10px; border-radius: 999px; border: none; cursor: pointer;
+    background: #2b6cf6; color: #fff; margin-left: auto;
+  }
+  .signup-btn.confirmed{ background: none; border: 1px solid var(--ink-soft); color: var(--ink-soft); }
+
+  #miniMap{ height: 150px; border-radius: 8px; overflow: hidden; filter: grayscale(1) invert(1) contrast(0.9); }
+  .widget .map-link{ display: block; text-align: center; font-size: 0.8rem; margin-top: 10px; color: var(--ink-soft); }
+
+  /* ===== Saved interests ===== */
+  .hobby-pill{
+    display: inline-block; font-size: 0.74rem; font-weight: 700; color: #fff;
+    padding: 5px 12px; border-radius: 999px; margin: 0 6px 6px 0;
+  }
+
+  /* ===== Community guidelines / help ===== */
+  .guide-link{
+    display: flex; align-items: center; gap: 10px; padding: 9px 0; cursor: pointer;
+    font-size: 0.86rem; color: var(--ink); border-bottom: 1px solid rgba(255,255,255,0.07);
+    background: none; border-top: none; border-left: none; border-right: none; width: 100%; text-align: left;
+  }
+  .guide-link:last-child{ border-bottom: none; }
+  .guide-link:hover{ color: #a8caff; }
+
+  /* ===== Search + hobby filters (center column) ===== */
+  .feed-top .sub{ color: var(--ink-soft); margin-bottom: 16px; }
+  .feed-search{
+    display: block; box-sizing: border-box; width: 100%; max-width: 100%;
+    font-family: var(--font-body); font-size: 0.96rem;
+    padding: 11px 16px; border: 2px solid var(--ink); border-radius: var(--radius);
+    background: var(--paper); color: var(--ink); margin-bottom: 14px;
+  }
+  .feed-search:focus{ outline: 2px solid var(--green); outline-offset: 1px; }
+  .feed-hobby-filters{ display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+  .feed-hobby-chip{
+    font-family: var(--font-body); font-size: 0.8rem; font-weight: 700; color: #fff;
+    padding: 7px 14px; border-radius: 999px; border: 2px solid transparent; cursor: pointer;
+    opacity: 0.55; transition: opacity 0.15s ease;
+  }
+  .feed-hobby-chip.active, .feed-hobby-chip:hover{ opacity: 1; }
+  .feed-hobby-chip[data-hobby="all"]{ background: var(--ink) !important; color: var(--paper) !important; opacity: 1; }
+
+  /* ===== Post card ===== */
+  .post-card{
+    background: var(--paper); border: 1px solid rgba(255,255,255,0.1); border-left: 5px solid #888;
+    border-radius: 10px; padding: 18px 20px; margin-bottom: 18px;
+  }
+  .post-head{ display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .post-avatar{ width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+  .post-author-name{ font-weight: 700; text-decoration: none; color: var(--ink); }
+  .post-hobby{
+    font-size: 0.76rem; font-weight: 700; color: #fff; padding: 4px 11px; border-radius: 999px;
+    margin-left: auto;
+  }
+  .post-meta{
+    display: flex; flex-wrap: wrap; align-items: center; gap: 12px; font-size: 0.85rem; color: var(--ink-soft);
+    margin-bottom: 10px;
+  }
+  .rsvp-row{ display: flex; align-items: center; gap: 6px; cursor: pointer; margin-left: auto; }
+  .rsvp-avatars{ display: flex; }
+  .rsvp-avatars img{
+    width: 22px; height: 22px; border-radius: 50%; object-fit: cover; border: 2px solid var(--paper);
+    margin-left: -8px;
+  }
+  .rsvp-avatars img:first-child{ margin-left: 0; }
+  .post-desc{ font-size: 0.98rem; line-height: 1.5; margin-bottom: 10px; }
+  .post-image{
+    width: 100%; max-height: 360px; object-fit: cover; border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.12); margin-bottom: 10px; display: block;
+  }
+  .post-author{ font-size: 0.82rem; color: var(--ink-soft); border-top: 1px solid rgba(255,255,255,0.12); padding-top: 10px; margin-bottom: 8px; }
+  .post-owner-actions{ display: flex; align-items: center; gap: 14px; margin-bottom: 4px; flex-wrap: wrap; }
+  .post-owner-actions a, .post-owner-actions button{
+    font-family: var(--font-body); font-size: 0.8rem; font-weight: 600;
+    color: var(--ink-soft); background: none; border: none; cursor: pointer; padding: 0;
+    text-decoration: none;
+  }
+  .post-owner-actions a:hover, .post-owner-actions button:hover{ color: var(--ink); text-decoration: underline; }
+
+  .react-row{ display: flex; gap: 4px; margin-left: 6px; }
+  .react-btn{
+    font-size: 0.95rem; background: none; border: 1px solid rgba(255,255,255,0.15); border-radius: 999px;
+    padding: 3px 9px; cursor: pointer; color: var(--ink-soft); display: flex; align-items: center; gap: 4px;
+  }
+  .react-btn.mine{ border-color: #2b6cf6; color: #a8caff; }
+  .react-btn .count{ font-size: 0.72rem; }
+
+  .comment-toggle{
+    background: none; border: none; color: var(--ink-soft); font-size: 0.85rem;
+    cursor: pointer; padding: 4px 0; font-family: var(--font-body); margin-left: auto;
+  }
+  .comment-toggle:hover{ color: var(--ink); }
+  .comments-section{ display: none; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; }
+  .comments-section.open{ display: block; }
+  .comment-row{ display: flex; gap: 8px; margin-bottom: 8px; font-size: 0.88rem; }
+  .comment-row b{ font-family: var(--font-display); flex-shrink: 0; }
+  .comment-form{ display: flex; gap: 8px; margin-top: 10px; }
+  .comment-form input{
+    flex: 1; font-family: var(--font-body); font-size: 0.88rem;
+    padding: 8px 12px; border: 2px solid var(--ink); border-radius: 999px;
+    background: var(--cream); color: var(--ink);
+  }
+  .comment-form button{
+    background: var(--ink); color: var(--paper); border: none; border-radius: 999px;
+    padding: 8px 16px; font-weight: 700; font-size: 0.85rem; cursor: pointer;
+  }
+  .empty-note{ color: var(--ink-soft); padding: 30px 0; text-align: center; }
+  .top-nav-links{ display: flex; gap: 18px; align-items: center; }
+  .top-nav-links a{ font-weight: 500; font-size: 0.95rem; }
+
+  /* ===== Floating Quick Post button ===== */
+  .quick-post-fab{
+    position: fixed; bottom: 28px; right: 28px; z-index: 200;
+    background: var(--ink); color: var(--paper); border: none; border-radius: 999px;
+    padding: 14px 22px; font-family: var(--font-body); font-weight: 700; font-size: 0.95rem;
+    cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,0.5); text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .quick-post-fab:hover{ background: #2b6cf6; }
+
+  /* ===== Generic modal ===== */
+  .simple-modal{
+    display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.85);
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  .simple-modal.open{ display: flex; }
+  .simple-modal-box{
+    background: var(--paper); border: 2px solid var(--ink); border-radius: 10px;
+    padding: 24px; max-width: 460px; width: 100%; max-height: 80vh; overflow-y: auto;
+  }
+  .simple-modal-box h3{ font-family: var(--font-display); margin-bottom: 14px; font-size: 1.15rem; }
+  .simple-modal-box p, .simple-modal-box li{ font-size: 0.9rem; color: var(--ink-soft); line-height: 1.6; margin-bottom: 8px; }
+  .simple-modal-box textarea{
+    width: 100%; min-height: 90px; font-family: var(--font-body); font-size: 0.9rem;
+    padding: 10px 12px; border: 2px solid var(--ink); border-radius: 6px;
+    background: var(--cream); color: var(--ink); margin-bottom: 14px;
+  }
+  .simple-modal-close{ margin-top: 12px; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="feed.html" class="logo">
+      <img src="assets/logo-mark.png" alt="" class="logo-mark" onerror="this.style.display='none'">
+      Hobbiyaa
+    </a>
+    <div class="top-nav-links">
+      <a href="browse.html">Browse people</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="map.html" class="icon-link" aria-label="Map" title="Map">🗺️</a>
+      <a href="messages.html" class="icon-link" aria-label="Messages">💬<span class="badge" id="messagesBadge" style="display:none;"></span></a>
+    </div>
+  </div>
+</header>
+
+<main class="feed-layout">
+
+  <!-- LEFT SIDEBAR -->
+  <aside class="feed-sidebar-left">
+    <div class="widget">
+      <h3>📅 Featured Events</h3>
+      <div id="featuredEvents"><p class="empty-note" style="padding:10px 0;">Loading…</p></div>
+    </div>
+    <div class="widget">
+      <h3>🗺️ Hobbies Map</h3>
+      <div id="miniMap"></div>
+      <a href="map.html" class="map-link">Open full map →</a>
+    </div>
+  </aside>
+
+  <!-- CENTER FEED -->
+  <section>
+    <div class="feed-top">
+      <h1 style="font-size:1.6rem; margin-bottom:4px;">Your city's board</h1>
+      <p class="sub" id="citySub">Loading…</p>
+    </div>
+
+    <section class="discovery-panel" aria-labelledby="discoverTitle">
+      <div class="discovery-panel-copy"><span class="discovery-eyebrow">YOUR NEXT HOBBY MOMENT</span><h2 id="discoverTitle">Find people like you.</h2><p>Start with a shared hobby, then turn it into a plan.</p></div>
+      <a class="discovery-action" href="browse.html">Discover people <span aria-hidden="true">↗</span></a>
+    </section>
+    <div class="feed-controls">
+      <input type="text" id="feedSearch" class="feed-search" placeholder="Search activities, venues or details…" aria-label="Search activities">
+      <select id="eventTimeFilter" class="feed-time-filter" aria-label="Filter activities by time"><option value="all">Any time</option><option value="today">Today</option><option value="weekend">This weekend</option><option value="upcoming">Upcoming</option></select>
+    </div>
+    <div class="feed-hobby-filters" id="feedHobbyFilters"></div>
+
+    <div id="postsList">Loading posts…</div>
+  </section>
+
+  <!-- RIGHT SIDEBAR -->
+  <aside class="feed-sidebar-right">
+    <div class="widget">
+      <h3>Your Saved Interests</h3>
+      <div id="savedInterests">Loading…</div>
+    </div>
+    <div class="widget">
+      <h3>Community</h3>
+      <button type="button" class="guide-link" id="guidelinesLink">📋 Community Guidelines</button>
+      <button type="button" class="guide-link" id="helpLink">❓ Need Help?</button>
+      <button type="button" class="guide-link" id="feedbackLink">✨ Help improve</button>
+    </div>
+  </aside>
+
+</main>
+
+<a href="create-post.html" class="quick-post-fab">+ Quick Post</a>
+
+<!-- Community Guidelines modal -->
+<div class="simple-modal" id="guidelinesModal">
+  <div class="simple-modal-box">
+    <h3>Community Guidelines</h3>
+    <ul style="padding-left:18px;">
+      <li>Hobbiyaa is for finding hobby partners — not a dating app. Keep interactions about the shared activity.</li>
+      <li>Meet in public places for your first meetup with someone new.</li>
+      <li>Be respectful in posts, comments, and chats. Harassment of any kind isn't tolerated.</li>
+      <li>Only post real, genuine plans — no spam or misleading events.</li>
+      <li>Report anything that makes you uncomfortable, and use Block if needed — it's immediate and mutual.</li>
+    </ul>
+    <button type="button" class="btn btn-ghost simple-modal-close" data-modal="guidelinesModal">Close</button>
+  </div>
+</div>
+
+<!-- Need Help modal -->
+<div class="simple-modal" id="helpModal">
+  <div class="simple-modal-box">
+    <h3>Need help?</h3>
+    <p>Having trouble with your account, a post, or someone's behavior? Reach out and we'll help sort it out.</p>
+    <p>Email: <strong>support@hobbiyaa.app</strong></p>
+    <p>For urgent safety concerns, use the Report or Block option directly on the person's profile or post first — it takes effect immediately.</p>
+    <button type="button" class="btn btn-ghost simple-modal-close" data-modal="helpModal">Close</button>
+  </div>
+</div>
+
+<!-- Help Improve / Feedback modal -->
+<div class="simple-modal" id="feedbackModal">
+  <div class="simple-modal-box">
+    <h3>Help us improve</h3>
+    <p>What's working, what's not, what should we build next? Tell us anything.</p>
+    <textarea id="feedbackText" placeholder="Your feedback…"></textarea>
+    <button type="button" class="btn btn-primary" id="submitFeedbackBtn">Send feedback</button>
+    <button type="button" class="btn btn-ghost simple-modal-close" data-modal="feedbackModal" style="margin-left:8px;">Cancel</button>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="toast.js"></script>
+<script src="notifications.js"></script>
+<script src="blocks.js"></script>
+<script src="feed.js"></script>
+</body>
+</html>

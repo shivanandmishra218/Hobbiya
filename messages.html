@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Messages — Hobbiyaa</title>
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  .inbox-wrap{ max-width: 640px; margin: 0 auto; padding: 40px 24px 100px; }
+  .inbox-wrap h1{ font-size: 1.6rem; margin-bottom: 20px; }
+  .convo-row{
+    display: flex; align-items: center; gap: 14px; padding: 14px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.1); cursor: pointer; border-radius: 8px;
+    text-decoration: none; color: var(--ink);
+  }
+  .convo-row:hover{ background: rgba(255,255,255,0.04); }
+  .convo-row img{ width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 2px solid var(--ink); flex-shrink: 0; }
+  .convo-info{ flex: 1; min-width: 0; }
+  .convo-name{ font-family: var(--font-display); font-weight: 700; font-size: 0.98rem; }
+  .convo-preview{
+    font-size: 0.86rem; color: var(--ink-soft);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+  }
+  .convo-preview.unread{ color: var(--ink); font-weight: 600; }
+  .convo-time{ font-size: 0.74rem; color: var(--ink-soft); flex-shrink: 0; }
+  .unread-dot{
+    width: 9px; height: 9px; border-radius: 50%; background: #2b6cf6; flex-shrink: 0;
+  }
+  .empty-note{ color: var(--ink-soft); text-align: center; padding: 40px 0; }
+  .top-nav-links{ display: flex; gap: 18px; align-items: center; }
+  .top-nav-links a{ font-weight: 500; font-size: 0.95rem; }
+
+  .inbox-top{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .new-group-btn{
+    font-family: var(--font-body); font-weight: 700; font-size: 0.88rem;
+    padding: 9px 16px; border-radius: var(--radius); border: 2px solid var(--ink);
+    background: none; color: var(--ink); cursor: pointer;
+  }
+  .new-group-btn:hover{ background: var(--ink); color: var(--paper); }
+
+  .group-avatar{
+    width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0;
+    background: var(--paper); border: 2px solid var(--ink);
+    display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
+  }
+
+  /* ===== New group modal ===== */
+  #groupModal{
+    display: none; position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.85); align-items: center; justify-content: center; padding: 20px;
+  }
+  .group-modal-box{
+    background: var(--paper); border: 2px solid var(--ink); border-radius: 10px;
+    padding: 22px; max-width: 420px; width: 100%; max-height: 80vh; display: flex; flex-direction: column;
+  }
+  .group-modal-box h3{ font-family: var(--font-display); margin-bottom: 14px; font-size: 1.15rem; }
+  .group-modal-box input[type="text"]{
+    width: 100%; font-family: var(--font-body); font-size: 1rem;
+    padding: 11px 14px; border: 2px solid var(--ink); border-radius: var(--radius);
+    background: var(--cream); color: var(--ink); margin-bottom: 14px;
+  }
+  .member-picker{ overflow-y: auto; flex: 1; margin-bottom: 14px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; }
+  .member-picker label{
+    display: flex; align-items: center; gap: 10px; padding: 8px 4px; cursor: pointer; font-size: 0.94rem;
+  }
+  .member-picker img{ width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+  .member-count-note{ font-size: 0.8rem; color: var(--ink-soft); margin-bottom: 10px; }
+  .group-modal-actions{ display: flex; gap: 10px; justify-content: flex-end; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="feed.html" class="logo">
+      <img src="assets/logo-mark.png" alt="" class="logo-mark" onerror="this.style.display='none'">
+      Hobbiyaa
+    </a>
+    <div class="top-nav-links">
+      <a href="browse.html">Browse</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="map.html" class="icon-link" aria-label="Map" title="Map">🗺️</a>
+      <a href="messages.html" class="icon-link" aria-label="Messages">💬<span class="badge" id="messagesBadge" style="display:none;"></span></a>
+      <button class="btn logout-btn" id="logoutBtn" style="background:none;border:2px solid var(--ink);cursor:pointer;">Log out</button>
+    </div>
+  </div>
+</header>
+
+<main class="inbox-wrap">
+  <div class="inbox-top">
+    <h1 style="margin:0;">Messages</h1>
+    <button type="button" class="new-group-btn" id="newGroupBtn">+ New group</button>
+  </div>
+  <div id="conversationsList">Loading…</div>
+</main>
+
+<!-- New group modal -->
+<div id="groupModal">
+  <div class="group-modal-box">
+    <h3>New group</h3>
+    <input type="text" id="groupNameInput" placeholder="Group name">
+    <p class="member-count-note">Pick people to add (up to 50 total, including you)</p>
+    <div class="member-picker" id="memberPicker">Loading your connections…</div>
+    <div class="group-modal-actions">
+      <button type="button" id="cancelGroupBtn" class="btn btn-ghost">Cancel</button>
+      <button type="button" id="createGroupBtn" class="btn btn-primary">Create group</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="toast.js"></script>
+<script src="notifications.js"></script>
+<script src="messages.js"></script>
+</body>
+</html>

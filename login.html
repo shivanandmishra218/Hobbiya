@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log in — Hobbiyaa</title>
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Caveat:wght@600;700&family=DM+Sans:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  .auth-wrap{ max-width: 440px; margin: 0 auto; padding: 64px 24px 100px; }
+  .auth-wrap h1{ font-size: 1.9rem; margin-bottom: 8px; }
+  .auth-wrap .sub{ color: var(--ink-soft); margin-bottom: 32px; }
+  .auth-switch{ margin-top: 20px; font-size: 0.94rem; color: var(--ink-soft); }
+  .auth-switch a{ color: var(--rust); font-weight: 700; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="index.html" class="logo">
+      <img src="assets/logo-mark.png" alt="" class="logo-mark" onerror="this.style.display='none'">
+      Hobbiyaa
+    </a>
+  </div>
+</header>
+
+<main class="auth-wrap">
+  <h1>Welcome back</h1>
+  <p class="sub">Log in to see your matches and groups.</p>
+
+  <form id="loginForm" class="join-form" novalidate>
+    <div class="field">
+      <label for="email">Email</label>
+      <input type="email" id="email" required placeholder="you@example.com">
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input type="password" id="password" required placeholder="Your password">
+    </div>
+    <button type="submit" class="btn btn-primary">Log in</button>
+    <p class="form-note" id="formNote" role="status" aria-live="polite"></p>
+  </form>
+
+  <p class="auth-switch">New here? <a href="signup.html">Create an account</a></p>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="toast.js"></script>
+<script src="login.js"></script>
+</body>
+</html>
